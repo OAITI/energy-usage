@@ -1,4 +1,5 @@
 
-data/Electricity_Hourly_nov15toOct17.xlsx
-
+data
 energy_study.Rmd
+energy_study_files
+energy_study_cache
