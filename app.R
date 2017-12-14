@@ -97,7 +97,10 @@ server <- function(input, output, session) {
   }, suspended = TRUE)
    
    elec_data <- reactive({
-     if (is.null(input$elec)) return(NULL)
+     if (is.null(input$elec)) {
+         load("data/elec_hourly.RData")
+         return(elec_hourly)
+     }
      
      return(read_xlsx(input$elec$datapath))
    })
@@ -201,7 +204,10 @@ server <- function(input, output, session) {
    })
    
    gas_data <- reactive({
-       if (is.null(input$gas)) return(NULL)
+       if (is.null(input$gas)) {
+           load("data/gas_data.RData")
+           return(gas_data)
+       }
        
        return(read_xlsx(input$gas$datapath, sheet = 6, skip = 5))
    })
@@ -257,9 +263,13 @@ server <- function(input, output, session) {
    })
    
    temperature_data <- reactive({
-       if (is.null(input$temp) || is.null(input$elec)) return(NULL)
+       if (is.null(input$temp) || is.null(input$elec)) {
+           load("data/temperature_data.RData")
+       } else {
+           temperature_data <- read_csv(input$temp$datapath)
+       }
        
-       return(read_csv(input$temp$datapath) %>%
+       return(temperature_data %>%
                   mutate(Date = mdy(`Bill month`)) %>%
                   filter(Date >= input$temperature_dates[1], Date <= input$temperature_dates[2]) %>%
                   left_join(elec_monthly(), by = c("Date" = "Date")) %>%
