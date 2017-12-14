@@ -162,7 +162,9 @@ server <- function(input, output, session) {
            mydat$Date <- ymd(paste(year(mydat$Date), "01", "01", sep = "-"))
        }
        
-       g <- ggplot(data = mydat, aes(x = Date, y = Usage, group = 1)) +
+       g <- ggplot(data = mydat, aes(x = Date, y = Usage, group = 1, 
+                                     text = paste("Date:", as.Date(Date),
+                                                  "<br>Usage:", round(Usage, digits = 2)))) +
            geom_line() +
            theme_bw() +
            theme(axis.text.x = element_text(angle = 45, size = 8))
@@ -175,7 +177,7 @@ server <- function(input, output, session) {
        
        if (input$aggregation != "Daily") g <- g + geom_point()
        
-       ggplotly(g, tooltip = c("Usage", "Date"))
+       ggplotly(g, tooltip = c("text"))
    })
    
    elec_grouped <- reactive({
@@ -237,7 +239,9 @@ server <- function(input, output, session) {
    output$gas_time_series <- renderPlotly({
        if (is.null(gas_series())) return(NULL)
        
-       g <- ggplot(data = gas_series(), aes(x = Date, y = Usage, group = 1)) +
+       g <- ggplot(data = gas_series(), aes(x = Date, y = Usage, group = 1,
+                                            text = paste("Date:", as.Date(Date),
+                                                  "<br>Usage:", round(Usage, digits = 2)))) +
            geom_point() +
            geom_line() +
            theme_bw() +
@@ -249,7 +253,7 @@ server <- function(input, output, session) {
            g <- g + scale_x_date(date_breaks = "3 months", date_minor_breaks = "1 month", date_labels = "%b %Y")
        }
        
-       ggplotly(g, tooltip = c("Usage", "Date"))
+       ggplotly(g, tooltip = c("text"))
    })
    
    temperature_data <- reactive({
