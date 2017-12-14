@@ -104,6 +104,7 @@ server <- function(input, output, session) {
                    Week = week(SDate),
                    Month = month(SDate, label = TRUE),
                    Year = year(SDate)) %>%
+            mutate(Week = replace(Week, Week == 53, 52)) %>%
             group_by_at(vars(one_of(myagg))) %>%
             summarise(Usage = sum(Value),
                       Date = SDate[1]) %>%
