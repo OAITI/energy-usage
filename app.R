@@ -95,6 +95,7 @@ server <- function(input, output, session) {
                        "Monthly" = c("Month", "Year"))
        
         elec_data() %>% 
+            mutate(Date = as.Date(Date)) %>%
             filter(Date >= input$dates[1], Date <= input$dates[2]) %>%
             mutate(SDate = ymd(Date),
                    Day = yday(SDate),
@@ -111,6 +112,7 @@ server <- function(input, output, session) {
        if (is.null(elec_data())) return(NULL)
            
        elec_data() %>%
+           mutate(Date = as.Date(Date)) %>%
            filter(Date >= input$dates[1], Date <= input$dates[2]) %>%
            mutate(SDate = ymd(Date),
                   WeekDay = wday(SDate, label = TRUE),
