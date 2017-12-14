@@ -126,7 +126,7 @@ server <- function(input, output, session) {
    output$time_series <- renderPlotly({
        if (is.null(elec_series())) return(NULL)
        
-       g <- ggplot(data = elec_series(), aes(x = Date, y = Usage)) +
+       g <- ggplot(data = elec_series(), aes(x = Date, y = Usage, group = 1)) +
            geom_line() +
            theme_bw()
        
@@ -158,7 +158,7 @@ server <- function(input, output, session) {
    gas_data <- reactive({
        if (is.null(input$gas)) return(NULL)
        
-       return(read_xlsx("data/Portfolio_Warner Memorial Presbyterian Church.xlsx", sheet = 6, skip = 5))
+       return(read_xlsx(input$gas$datapath, sheet = 6, skip = 5))
    })
    
    gas_series <- reactive({
@@ -194,7 +194,7 @@ server <- function(input, output, session) {
    output$gas_time_series <- renderPlotly({
        if (is.null(gas_series())) return(NULL)
        
-       g <- ggplot(data = gas_series(), aes(x = Date, y = Usage)) +
+       g <- ggplot(data = gas_series(), aes(x = Date, y = Usage, group = 1)) +
            geom_line() +
            theme_bw() +
            geom_point()
