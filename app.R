@@ -28,7 +28,7 @@ ui <- fluidPage(theme = shinytheme("cerulean"),
          conditionalPanel(condition = "input.tabs1 == 'Electricity'",
                           fileInput("elec", "Electricity Data", accept = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"),
                           dateRangeInput("dates",
-                                         "Electric Date Range",
+                                         "Electricity Date Range",
                                          start = "2015-11-09",
                                          end = "2017-10-30")
          ),
