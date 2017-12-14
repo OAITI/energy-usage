@@ -45,7 +45,7 @@ ui <- fluidPage(theme = shinytheme("cerulean"),
           tabsetPanel(id = "tabs1",
               tabPanel("Electricity",
                        h4("Electricity Usage Over Time"),
-                       selectInput("aggregation", "Aggregation Level", choices = c("Daily", "Weekly", "Monthly"), selected = "Monthly"),
+                       selectInput("aggregation", "Aggregation Level", choices = c("Daily", "Weekly", "Monthly", "Yearly"), selected = "Monthly"),
                        withSpinner(plotlyOutput("time_series")),
                        hr(),
                        h4("Hourly Electricity Usage"),
@@ -54,6 +54,7 @@ ui <- fluidPage(theme = shinytheme("cerulean"),
               ),
               tabPanel("Gas",
                        h4("Gas Usage Over Time"),
+                       selectInput("gas_aggregation", "Aggregation Level", choices = c("Monthly", "Yearly"), selected = "Monthly"),
                        withSpinner(plotlyOutput("gas_time_series"))
               )
           )
@@ -92,7 +93,8 @@ server <- function(input, output, session) {
        
        myagg <- switch(input$aggregation, "Daily" = c("Day", "Month", "Year"), 
                        "Weekly" = c("Week", "Year"),
-                       "Monthly" = c("Month", "Year"))
+                       "Monthly" = c("Month", "Year"),
+                       "Yearly" = "Year")
        
         elec_data() %>% 
             mutate(Date = as.Date(Date)) %>%
@@ -167,6 +169,10 @@ server <- function(input, output, session) {
            mutate(SDate=as.Date(`Start Date`), EDate=as.Date(`End Date`), Diff_Days=EDate-SDate) %>%
            filter(SDate >= input$gas_dates[1], EDate <= input$gas_dates[2])
        
+       myagg <- switch(input$gas_aggregation,
+                       "Monthly" = c("Meter Type", "Month", "Year"),
+                       "Yearly" = c("Meter Type", "Year"))
+       
        all_agg %>% # Take the agg data
            mutate(Cost = replace(`Cost ($)`, `Cost ($)` == "Not Available", NA)) %>% # Set the not available costs to NA
            rowwise() %>% # Process each row (no grouping)
@@ -178,9 +184,10 @@ server <- function(input, output, session) {
                   Usage = Usage / length(date_seq), # Divide usage by the number of days in the billing period
                   Cost = as.numeric(Cost) / length(date_seq)) %>% # Divide cost by the number of days in the billing period
            unnest() %>% # Unnest the data frame (this expands it to one row per every day in date_seq)
-           group_by(`Meter Type`, Year = year(date_seq), Month = month(date_seq)) %>% # For each year and month
+           mutate(Year = year(date_seq), Month = month(date_seq)) %>%
+           group_by_at(vars(one_of(myagg))) %>%
            summarise(Usage = sum(Usage), Cost = sum(Cost)) %>% # Sum up the per day usage to count the amount for each month
-           mutate(Date = ymd(paste(Year, Month, "01", sep = "-"))) %>% # Create a date column (assuming first of the month)
+           mutate(Date = ymd(paste(Year, ifelse(input$gas_aggregation == "Monthly", Month, "01"), "01", sep = "-"))) %>% # Create a date column (assuming first of the month)
            filter(`Meter Type` == "Natural Gas")
    })
    
