@@ -38,6 +38,13 @@ ui <- fluidPage(theme = shinytheme("cerulean"),
                                          "Gas Date Range",
                                          start = "2012-12-10",
                                          end = "2017-10-30")
+         ),
+         conditionalPanel(condition = "input.tabs1 == 'Temperature'",
+                          fileInput("temp", "Temperature Data", accept = "text/csv"),
+                          dateRangeInput("temperature_dates",
+                                         "Temperature Date Range",
+                                         start = "2015-11-01",
+                                         end = "2017-10-01")
          )
       ),
       
@@ -49,13 +56,20 @@ ui <- fluidPage(theme = shinytheme("cerulean"),
                        withSpinner(plotlyOutput("time_series")),
                        hr(),
                        h4("Hourly Electricity Usage"),
-                       selectInput("facet", "Grouping", choices = c("None", "WeekDay", "Month")),
+                       selectInput("facet", "Grouping", choices = c("None", "Week Day" = "WeekDay", "Month")),
                        withSpinner(plotlyOutput("hourly_plot", height = "600px"))
               ),
               tabPanel("Gas",
                        h4("Gas Usage Over Time"),
                        selectInput("gas_aggregation", "Aggregation Level", choices = c("Monthly", "Yearly"), selected = "Monthly"),
                        withSpinner(plotlyOutput("gas_time_series"))
+              ),
+              tabPanel("Temperature",
+                       h4("Electricity Usage by Temperature"),
+                       withSpinner(plotlyOutput("elec_temp")),
+                       hr(),
+                       h4("Gas Usage by Temperature"),
+                       withSpinner(plotlyOutput("gas_temp"))
               )
           )
       )
@@ -111,6 +125,21 @@ server <- function(input, output, session) {
             arrange(Date)
    })
    
+   elec_monthly <- reactive({
+       if (is.null(elec_data())) return(NULL)
+       
+       elec_data() %>% 
+           mutate(Date = as.Date(Date)) %>%
+           filter(Date >= input$temperature_dates[1], Date <= input$temperature_dates[2]) %>%
+           mutate(SDate = ymd(Date),
+                  Month = month(SDate, label = TRUE),
+                  Year = year(SDate)) %>%
+           group_by(Year, Month) %>%
+           summarise(Usage = sum(Value)) %>%
+           mutate(Date = ymd(paste(Year, Month, "01", sep = "-"))) %>%
+           arrange(Date)
+   })
+   
    elec_hourly <- reactive({
        if (is.null(elec_data())) return(NULL)
            
@@ -127,13 +156,26 @@ server <- function(input, output, session) {
    output$time_series <- renderPlotly({
        if (is.null(elec_series())) return(NULL)
        
-       g <- ggplot(data = elec_series(), aes(x = Date, y = Usage, group = 1)) +
+       mydat <- elec_series()
+       
+       if (input$aggregation == "Yearly") {
+           mydat$Date <- ymd(paste(year(mydat$Date), "01", "01", sep = "-"))
+       }
+       
+       g <- ggplot(data = mydat, aes(x = Date, y = Usage, group = 1)) +
            geom_line() +
-           theme_bw()
+           theme_bw() +
+           theme(axis.text.x = element_text(angle = 45, size = 8))
+       
+       if (input$aggregation == "Yearly") {
+           g <- g + scale_x_date(date_breaks = "1 year", date_minor_breaks = "1 month", date_labels = "%Y")
+       } else {
+           g <- g + scale_x_date(date_breaks = "1 month", date_labels = "%b %Y")
+       }
        
        if (input$aggregation != "Daily") g <- g + geom_point()
        
-       ggplotly(g)
+       ggplotly(g, tooltip = c("Usage", "Date"))
    })
    
    elec_grouped <- reactive({
@@ -196,11 +238,45 @@ server <- function(input, output, session) {
        if (is.null(gas_series())) return(NULL)
        
        g <- ggplot(data = gas_series(), aes(x = Date, y = Usage, group = 1)) +
+           geom_point() +
            geom_line() +
            theme_bw() +
-           geom_point()
+           theme(axis.text.x = element_text(angle = 45, size = 8))
        
-       ggplotly(g)
+       if (input$gas_aggregation == "Yearly") {
+           g <- g + scale_x_date(date_breaks = "1 year", date_minor_breaks = "1 month", date_labels = "%Y")
+       } else {
+           g <- g + scale_x_date(date_breaks = "3 months", date_minor_breaks = "1 month", date_labels = "%b %Y")
+       }
+       
+       ggplotly(g, tooltip = c("Usage", "Date"))
+   })
+   
+   temperature_data <- reactive({
+       if (is.null(input$temp) || is.null(input$elec)) return(NULL)
+       
+       return(read_csv(input$temp$datapath) %>%
+                  mutate(Date = mdy(`Bill month`)) %>%
+                  filter(Date >= input$temperature_dates[1], Date <= input$temperature_dates[2]) %>%
+                  left_join(elec_monthly(), by = c("Date" = "Date")) %>%
+                  rename(`kWh Used` = Usage) %>%
+                  slice(-1))
+   })
+   
+   output$elec_temp <- renderPlotly({
+       if (is.null(temperature_data())) return(NULL)
+       
+       ggplotly(ggplot(data = temperature_data(), aes(x = `Average daily temperature`, y = `kWh Used`, text = Date)) +
+                    geom_point() +
+                    theme_bw())
+   })
+   
+   output$gas_temp <- renderPlotly({
+       if (is.null(temperature_data())) return(NULL)
+       
+       ggplotly(ggplot(data = temperature_data(), aes(x = `Average daily temperature`, y = `Therms used`, text = Date)) +
+                    geom_point() +
+                    theme_bw())
    })
 }
 
