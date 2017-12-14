@@ -20,7 +20,7 @@ ui <- fluidPage(theme = shinytheme("cerulean"),
          a(href = "https://oaiti.org", target = "_blank", img(src = "images/oaiti_transparent.png", width = "135")),
          
          h4("About"),
-         HTML("This app allows the uploading of energy data in a particular format and performs an analysis of that data. The expected format for the electricity data is an Excel spreadsheet with columns <b>Date</b>, <b>Start Time</b>, <b>Duration</b>, <b>Value</b>, and <b>Year</b>. Once the data has been uploaded, the results will be computed and displayed automatically. The date range can be selected to subset the time frame considered."),
+         HTML("This app allows the uploading of energy data in a particular format and performs an analysis of that data. The expected format is an Excel spreadsheet with columns <b>Date</b>, <b>Start Time</b>, <b>Duration</b>, <b>Value</b>, and <b>Year</b>. Once the data has been uploaded, the results will be computed and displayed automatically. The date range can be selected to subset the time frame considered."),
          
          hr(),
          
