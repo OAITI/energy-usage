@@ -97,7 +97,10 @@ server <- function(input, output, session) {
   }, suspended = TRUE)
    
    elec_data <- reactive({
-     if (is.null(input$elec)) return(NULL)
+     if (is.null(input$elec)) {
+         load("data/elec_hourly.RData")
+         return(elec_hourly)
+     }
      
      return(read_xlsx(input$elec$datapath))
    })
@@ -162,7 +165,9 @@ server <- function(input, output, session) {
            mydat$Date <- ymd(paste(year(mydat$Date), "01", "01", sep = "-"))
        }
        
-       g <- ggplot(data = mydat, aes(x = Date, y = Usage, group = 1)) +
+       g <- ggplot(data = mydat, aes(x = Date, y = Usage, group = 1, 
+                                     text = paste("Date:", as.Date(Date),
+                                                  "<br>Usage:", round(Usage, digits = 2)))) +
            geom_line() +
            theme_bw() +
            theme(axis.text.x = element_text(angle = 45, size = 8))
@@ -175,7 +180,7 @@ server <- function(input, output, session) {
        
        if (input$aggregation != "Daily") g <- g + geom_point()
        
-       ggplotly(g, tooltip = c("Usage", "Date"))
+       ggplotly(g, tooltip = c("text"))
    })
    
    elec_grouped <- reactive({
@@ -199,7 +204,10 @@ server <- function(input, output, session) {
    })
    
    gas_data <- reactive({
-       if (is.null(input$gas)) return(NULL)
+       if (is.null(input$gas)) {
+           load("data/gas_data.RData")
+           return(gas_data)
+       }
        
        return(read_xlsx(input$gas$datapath, sheet = 6, skip = 5))
    })
@@ -237,7 +245,9 @@ server <- function(input, output, session) {
    output$gas_time_series <- renderPlotly({
        if (is.null(gas_series())) return(NULL)
        
-       g <- ggplot(data = gas_series(), aes(x = Date, y = Usage, group = 1)) +
+       g <- ggplot(data = gas_series(), aes(x = Date, y = Usage, group = 1,
+                                            text = paste("Date:", as.Date(Date),
+                                                  "<br>Usage:", round(Usage, digits = 2)))) +
            geom_point() +
            geom_line() +
            theme_bw() +
@@ -249,13 +259,17 @@ server <- function(input, output, session) {
            g <- g + scale_x_date(date_breaks = "3 months", date_minor_breaks = "1 month", date_labels = "%b %Y")
        }
        
-       ggplotly(g, tooltip = c("Usage", "Date"))
+       ggplotly(g, tooltip = c("text"))
    })
    
    temperature_data <- reactive({
-       if (is.null(input$temp) || is.null(input$elec)) return(NULL)
+       if (is.null(input$temp) || is.null(input$elec)) {
+           load("data/temperature_data.RData")
+       } else {
+           temperature_data <- read_csv(input$temp$datapath)
+       }
        
-       return(read_csv(input$temp$datapath) %>%
+       return(temperature_data %>%
                   mutate(Date = mdy(`Bill month`)) %>%
                   filter(Date >= input$temperature_dates[1], Date <= input$temperature_dates[2]) %>%
                   left_join(elec_monthly(), by = c("Date" = "Date")) %>%

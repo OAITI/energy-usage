@@ -1,6 +1,13 @@
 
-data
 energy_study.Rmd
 energy_study_files
 energy_study_cache
 energy_study.html
+
+data/Electricity_Hourly_nov15toOct17.xlsx
+
+data/NatGas_Energy.csv
+
+data/Portfolio_Warner Memorial Presbyterian Church.xlsx
+
+code/data_anon.R
