@@ -172,11 +172,17 @@ server <- function(input, output, session) {
        
        if (input$aggregation == "Yearly") {
            mydat$Date <- ymd(paste(year(mydat$Date), "01", "01", sep = "-"))
+           mytext <- paste("Usage:", round(mydat$Usage, digits = 2))
+       } else if (input$aggregation == "Monthly") {
+           mytext <- paste("Month:", format(as.Date(mydat$Date), "%b %y"),
+                           "<br>Usage:", round(mydat$Usage, digits = 2))
+       } else {
+           mytext <- paste("Date:", as.Date(mydat$Date),
+                           "<br>Usage:", round(mydat$Usage, digits = 2))
        }
        
        g <- ggplot(data = mydat, aes(x = Date, y = Usage, group = 1, 
-                                     text = paste("Date:", as.Date(Date),
-                                                  "<br>Usage:", round(Usage, digits = 2)))) +
+                                     text = mytext)) +
            geom_line() +
            theme_bw() +
            theme(axis.text.x = element_text(angle = 45, size = 8))
@@ -252,8 +258,7 @@ server <- function(input, output, session) {
        if (is.null(gas_series())) return(NULL)
        
        g <- ggplot(data = gas_series(), aes(x = Date, y = Usage, group = 1,
-                                            text = paste("Date:", as.Date(Date),
-                                                  "<br>Usage:", round(Usage, digits = 2)))) +
+                                            text = paste("Usage:", round(Usage, digits = 2)))) +
            geom_point() +
            geom_line() +
            theme_bw() +
@@ -286,7 +291,7 @@ server <- function(input, output, session) {
    output$elec_temp <- renderPlotly({
        if (is.null(temperature_data())) return(NULL)
        
-       ggplotly(ggplot(data = temperature_data(), aes(x = `Average daily temperature`, y = `kWh Used`, text = Date)) +
+       ggplotly(ggplot(data = temperature_data(), aes(x = `Average daily temperature`, y = `kWh Used`, text = paste("Month:", format(Date, "%b %Y")))) +
                     geom_point() +
                     theme_bw())
    })
@@ -294,7 +299,7 @@ server <- function(input, output, session) {
    output$gas_temp <- renderPlotly({
        if (is.null(temperature_data())) return(NULL)
        
-       ggplotly(ggplot(data = temperature_data(), aes(x = `Average daily temperature`, y = `Therms used`, text = Date)) +
+       ggplotly(ggplot(data = temperature_data(), aes(x = `Average daily temperature`, y = `Therms used`, text = paste("Month:", format(Date, "%b %Y")))) +
                     geom_point() +
                     theme_bw())
    })
