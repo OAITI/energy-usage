@@ -12,6 +12,8 @@ library(shinythemes)
 addResourcePath("images", "images")
 
 ui <- fluidPage(theme = shinytheme("cerulean"),
+                
+   includeCSS("css/styles.css"),
    
    titlePanel("Energy Usage Viewer"),
    
