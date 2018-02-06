@@ -209,10 +209,15 @@ server <- function(input, output, session) {
    output$hourly_plot <- renderPlotly({
      if (is.null(elec_hourly())) return(NULL)
        
+       group_vars <- "Hour"
+       if (input$facet != "None") group_vars <- c(group_vars, input$facet)
+       
        hourly_elec_data <- elec_hourly() %>%
+           group_by_at(vars(one_of(group_vars))) %>%
            mutate(Outlier = Usage >= quantile(Usage, .75) + 1.5 * IQR(Usage) | 
-                      Usage <= quantile(Usage, .25) - 1.5 * IQR(Usage))
-           
+                      Usage <= quantile(Usage, .25) - 1.5 * IQR(Usage)) %>%
+           ungroup()
+       
      g <- ggplot(data = hourly_elec_data, aes(x = Hour, y = Usage, text = SDate)) +
          geom_boxplot() +
          geom_point(data = filter(hourly_elec_data, Outlier)) +
