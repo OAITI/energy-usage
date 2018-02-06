@@ -208,10 +208,14 @@ server <- function(input, output, session) {
    
    output$hourly_plot <- renderPlotly({
      if (is.null(elec_hourly())) return(NULL)
+       
+       hourly_elec_data <- elec_hourly() %>%
+           mutate(Outlier = Usage >= quantile(Usage, .75) + 1.5 * IQR(Usage) | 
+                      Usage <= quantile(Usage, .25) - 1.5 * IQR(Usage))
            
-     g <- ggplot(data = elec_hourly(), aes(x = Hour, y = Usage, text = SDate)) +
+     g <- ggplot(data = hourly_elec_data, aes(x = Hour, y = Usage, text = SDate)) +
          geom_boxplot() +
-         geom_point(size = 0.3, alpha = 0) +
+         geom_point(data = filter(hourly_elec_data, Outlier)) +
          theme_bw() +
          theme(axis.text.x = element_text(angle = 45, size = 6))
      
