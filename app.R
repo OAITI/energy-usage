@@ -8,6 +8,7 @@ library(plotly)
 library(lubridate)
 library(shinycssloaders)
 library(shinythemes)
+library(purrr)
 
 addResourcePath("images", "images")
 
@@ -257,6 +258,8 @@ server <- function(input, output, session) {
            mutate(`Meter Type` = unlist(`Meter Type`), # Convert back from a list
                   Usage = Usage / length(date_seq), # Divide usage by the number of days in the billing period
                   Cost = as.numeric(Cost) / length(date_seq)) %>% # Divide cost by the number of days in the billing period
+           ungroup %>%
+           mutate(date_seq = date_seq %>% map(function(y) tibble(date_seq = y))) %>% # Divide cost by the number of days in the billing period
            unnest() %>% # Unnest the data frame (this expands it to one row per every day in date_seq)
            mutate(Year = year(date_seq), Month = month(date_seq)) %>%
            group_by_at(vars(one_of(myagg))) %>%
